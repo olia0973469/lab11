@@ -1,4 +1,11 @@
 terraform {
+  backend "s3" {
+    bucket = "577125335672-2025-terraform-tfstate"
+    key = "dev"
+    region = "eu-central-1"
+    dynamodb_table = "577125335672-2025-terraform-tfstate"
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"

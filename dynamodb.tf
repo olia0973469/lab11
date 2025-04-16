@@ -1,5 +1,19 @@
-resource "aws_dynamodb_table" "table1" {
-  name             = "table1"
+module "label_courses" {
+  source   = "cloudposse/label/null"
+  version = "0.25.0"
+  context = module.label.context
+  name = "courses"
+}
+
+module "label_author" {
+  source   = "cloudposse/label/null"
+  version = "0.25.0"
+  context = module.label.context
+  name = "author"
+}
+
+resource "aws_dynamodb_table" "courses" {
+  name             = module.label_courses.id
   hash_key         = "TestTableHashKey"
   billing_mode     = "PAY_PER_REQUEST"
 
@@ -9,18 +23,13 @@ resource "aws_dynamodb_table" "table1" {
   }
 }
 
-module "eg_prod_bastion_label" {
-  source = "cloudposse/label/terraform"
+resource "aws_dynamodb_table" "author" {
+  name             = module.label_author.id
+  hash_key         = "TestTableHashKey"
+  billing_mode     = "PAY_PER_REQUEST"
 
-  version = "0.8.0"
-  namespace  = "eg"
-  stage      = "prod"
-  name       = "bastion"
-  attributes = ["public"]
-  delimiter  = "-"
-
-  tags = {
-    "BusinessUnit" = "XYZ",
-    "Snapshot"     = "true"
+  attribute {
+    name = "TestTableHashKey"
+    type = "S"
   }
 }
