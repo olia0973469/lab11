@@ -1,35 +1,23 @@
-module "label_courses" {
-  source   = "cloudposse/label/null"
-  version = "0.25.0"
+module "table_courses" {
+  source = "./modules/dynamodb"
   context = module.label.context
   name = "courses"
 }
 
-module "label_author" {
-  source   = "cloudposse/label/null"
-  version = "0.25.0"
+module "table_authors" {
+  source = "./modules/dynamodb"
   context = module.label.context
-  name = "author"
+  name = "authors"
 }
 
-resource "aws_dynamodb_table" "courses" {
-  name             = module.label_courses.id
-  hash_key         = "TestTableHashKey"
-  billing_mode     = "PAY_PER_REQUEST"
+#module "table_get_all_courses" {
+#  source = "./modules/lambda"
+#  context = module.label.context
+#  name = "table_get_all_courses"
+#}
 
-  attribute {
-    name = "TestTableHashKey"
-    type = "S"
-  }
-}
-
-resource "aws_dynamodb_table" "author" {
-  name             = module.label_author.id
-  hash_key         = "TestTableHashKey"
-  billing_mode     = "PAY_PER_REQUEST"
-
-  attribute {
-    name = "TestTableHashKey"
-    type = "S"
-  }
+module "table_get_all_authors" {
+  source = "./modules/lambda"
+  context = module.label.context
+  name = "table_get_all_authors"
 }
