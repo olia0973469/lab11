@@ -10,14 +10,9 @@ module "table_authors" {
   name = "authors"
 }
 
-#module "table_get_all_courses" {
-#  source = "./modules/lambda"
-#  context = module.label.context
-#  name = "table_get_all_courses"
-#}
-
-module "table_get_all_authors" {
+module "lambda_functions" {
   source = "./modules/lambda"
   context = module.label.context
-  name = "table_get_all_authors"
+  courses_table = module.table_courses.table_name
+  authors_table = module.table_authors.table_name
 }
