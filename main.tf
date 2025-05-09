@@ -15,4 +15,6 @@ module "lambda_functions" {
   context = module.label.context
   courses_table = module.table_courses.table_name
   authors_table = module.table_authors.table_name
+  courses_table_arn = module.table_courses.table_arn
+  authors_table_arn = module.table_authors.table_arn
 }
