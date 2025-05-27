@@ -6,6 +6,7 @@ module "label_api" {
   name    = "api"
 }
 
+
 resource "aws_api_gateway_rest_api" "this" {
   #   body = jsonencode({
   #     openapi = "3.0.1"
@@ -84,6 +85,8 @@ resource "aws_api_gateway_integration_response" "integration_response_get_course
   # response_parameters = { "integration.response.header.access-control-allow-origin" = "'*'" }
 }
 
+
+
 # resource "aws_api_gateway_integration" "courses_integration" {
 #   rest_api_id = aws_api_gateway_rest_api.this.id
 #   resource_id = aws_api_gateway_resource.courses.id
@@ -135,13 +138,14 @@ resource "aws_api_gateway_stage" "dev" {
   stage_name    = "dev"
 }
 
+
 resource "aws_api_gateway_integration" "get_courses" {
   rest_api_id             = aws_api_gateway_rest_api.this.id
   resource_id             = aws_api_gateway_resource.courses.id
   http_method             = aws_api_gateway_method.courses_post.http_method
   integration_http_method = "POST"
   type                    = "AWS"
-  uri                     = module.lambda_functions.lambda_courses_invoke_arn
+  uri                     = module.lambda_functions.lambda_get_course_invoke_arn
   request_parameters      = { "integration.request.header.X-Authorization" = "'static'" }
   request_templates = {
     "application/xml" = <<EOF
@@ -182,7 +186,9 @@ resource "aws_api_gateway_request_validator" "this" {
 }
 
 
-# #####################
+
+
+#######################
 
 
 resource "aws_api_gateway_resource" "authors" {
@@ -258,3 +264,200 @@ module "cors" {
   api_resource_id = aws_api_gateway_resource.authors.id
 }
 
+####################################
+
+resource "aws_api_gateway_resource" "course_id" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_resource.courses.id
+  path_part   = "{id}"
+}
+
+module "cors_course_id" {
+  source          = "squidfunk/api-gateway-enable-cors/aws"
+  version         = "0.3.3"
+  api_id          = aws_api_gateway_rest_api.this.id
+  api_resource_id = aws_api_gateway_resource.course_id.id
+
+  allow_methods = ["GET", "PUT", "DELETE", "OPTIONS"]
+  allow_headers = ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key"]
+  allow_origin  = "*"
+}
+
+# GET /courses/{id}
+resource "aws_api_gateway_method" "course_id_get" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.course_id.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "course_id_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.course_id.id
+  http_method             = aws_api_gateway_method.course_id_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS"
+  uri                     = module.lambda_functions.lambda_get_course_invoke_arn
+
+  request_templates = {
+    "application/json" = <<EOF
+    {
+      "id": "$input.params('id')"
+    }
+    EOF
+  }
+}
+
+resource "aws_api_gateway_method_response" "course_id_get_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  resource_id = aws_api_gateway_resource.course_id.id
+  http_method = aws_api_gateway_method.course_id_get.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "course_id_get_response" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  resource_id = aws_api_gateway_resource.course_id.id
+  http_method = aws_api_gateway_method.course_id_get.http_method
+  status_code = "200"
+  selection_pattern = ""
+
+  response_templates = {
+    "application/json" = "$input.body"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'" 
+  }
+
+  depends_on = [aws_api_gateway_integration.course_id_get_integration]
+}
+
+# PUT /courses/{id}
+resource "aws_api_gateway_method" "course_id_put" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.course_id.id
+  http_method   = "PUT"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "course_id_put_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.course_id.id
+  http_method             = aws_api_gateway_method.course_id_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS"
+  uri                     = module.lambda_functions.lambda_update_course_invoke_arn
+
+  request_templates = {
+    "application/json" = <<EOF
+    #set($inputRoot = $input.path('$'))
+    {
+      "id": "$input.params('id')",
+      #foreach($key in $inputRoot.keySet())
+      "$key": $input.json("$.$key")#if($foreach.hasNext),#end
+      #end
+    }
+    EOF
+  }
+}
+
+resource "aws_api_gateway_method_response" "course_id_put_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  resource_id = aws_api_gateway_resource.course_id.id
+  http_method = aws_api_gateway_method.course_id_put.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+
+resource "aws_api_gateway_integration_response" "course_id_put_response" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  resource_id = aws_api_gateway_resource.course_id.id
+  http_method = aws_api_gateway_method.course_id_put.http_method
+  status_code = "200"
+  selection_pattern = ""
+
+  response_templates = {
+    "application/json" = "$input.body"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'" 
+  }
+
+  depends_on = [aws_api_gateway_integration.course_id_put_integration]
+}
+
+# DELETE /courses/{id}
+resource "aws_api_gateway_method" "course_id_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.course_id.id
+  http_method   = "DELETE"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "course_id_delete_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.this.id
+  resource_id             = aws_api_gateway_resource.course_id.id
+  http_method             = aws_api_gateway_method.course_id_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS"
+  uri                     = module.lambda_functions.lambda_delete_course_invoke_arn
+
+   request_templates = {
+    "application/json" = <<EOF
+    {
+      "id": "$input.params('id')"
+    }
+    EOF
+  }
+}
+
+resource "aws_api_gateway_method_response" "course_id_delete_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  resource_id = aws_api_gateway_resource.course_id.id
+  http_method = aws_api_gateway_method.course_id_delete.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "course_id_delete_response" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  resource_id = aws_api_gateway_resource.course_id.id
+  http_method = aws_api_gateway_method.course_id_delete.http_method
+  status_code = "200"
+  selection_pattern = ""
+
+  response_templates = {
+    "application/json" = "$input.body"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'*'" 
+  }
+
+  depends_on = [aws_api_gateway_integration.course_id_delete_integration]
+}
