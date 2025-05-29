@@ -5,7 +5,7 @@ terraform {
     region = "eu-central-1"
     dynamodb_table = "577125335672-2025-terraform-tfstate-lock"
   }
-
+  
   required_providers {
     aws = {
       source  = "hashicorp/aws"
